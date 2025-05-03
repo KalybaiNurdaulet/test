@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Квиз</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container quiz-container">
+        <h1 id="quiz-title">Квиз</h1>
+        <div id="question-container">
+            <p class="question-counter">Вопрос <span id="current-question">1</span> из <span id="total-questions">?</span></p>
+            <h2 id="question-text">Загрузка вопроса...</h2>
+            <div id="options-container">
+                <!-- Варианты ответа будут добавлены здесь -->
+            </div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <button id="submit-button" class="btn">Проверить ответ</button>
+        <button id="next-button" class="btn" style="display: none;">Следующий вопрос</button>
+
+        <div id="results-container" style="display: none;">
+            <h2>Результаты</h2>
+            <p>Вы ответили правильно на <span id="score">0</span> из <span id="total-score">0</span> вопросов.</p>
+            <a href="index.html" class="btn">Выбрать другую тему</a>
+        </div>
+         <a href="index.html" class="back-link">← Назад к выбору темы</a>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
