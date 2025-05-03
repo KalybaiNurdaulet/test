@@ -1,26 +1,40 @@
+/* --- Base Styles (Mobile First Approach) --- */
 body {
-    font-family: sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; /* More modern font stack */
     line-height: 1.6;
     margin: 0;
-    padding: 20px;
+    padding: 10px; /* Padding on body for small screens */
     background-color: #f4f4f4;
     color: #333;
+    font-size: 16px; /* Base font size */
 }
 
 .container {
-    max-width: 800px;
-    margin: 20px auto;
+    width: 100%; /* Full width on small screens */
+    max-width: 800px; /* Max width for larger screens */
+    margin: 15px auto; /* Reduced top/bottom margin for mobile */
     background: #fff;
-    padding: 30px;
+    padding: 20px; /* Default padding */
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08); /* Softer shadow */
 }
 
 h1, h2 {
     text-align: center;
     color: #333;
+    margin-top: 0.5em;
+    margin-bottom: 0.8em;
 }
 
+h1 {
+    font-size: 1.8em; /* Slightly larger H1 */
+}
+
+h2 {
+    font-size: 1.3em; /* Slightly larger H2 for questions */
+}
+
+/* --- Theme Selection --- */
 #theme-selection {
     display: flex;
     flex-direction: column;
@@ -30,133 +44,253 @@ h1, h2 {
 
 .theme-button {
     display: block;
-    padding: 15px;
+    padding: 14px 20px; /* Increased padding for touch */
     background-color: #007bff;
     color: white;
     text-align: center;
     text-decoration: none;
-    border-radius: 5px;
-    transition: background-color 0.3s ease;
+    border-radius: 6px; /* Slightly larger radius */
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    font-size: 1.1em;
+    font-weight: 500;
 }
 
 .theme-button:hover {
     background-color: #0056b3;
 }
 
+.theme-button:active { /* Feedback on tap */
+    transform: scale(0.98);
+}
+
+
+/* --- Quiz Container --- */
 .quiz-container {
-    position: relative;
+    position: relative; /* For absolute positioning of back link */
+    padding-top: 45px; /* Add space for the back link */
 }
 
 .back-link {
     position: absolute;
-    top: 15px;
+    top: 15px; /* Position relative to quiz-container padding */
     left: 15px;
     text-decoration: none;
     color: #007bff;
+    font-size: 0.95em;
+    padding: 5px; /* Add padding for easier tapping */
 }
 .back-link:hover {
     text-decoration: underline;
 }
 
-
 .question-counter {
     text-align: right;
-    color: #666;
+    color: #555; /* Slightly darker */
     font-size: 0.9em;
+    margin-bottom: 15px; /* Space below counter */
 }
 
 #options-container {
-    margin-top: 20px;
+    margin-top: 25px; /* More space above options */
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px; /* Slightly more gap */
 }
 
 .option {
-    display: block; /* Makes the whole area clickable */
-    padding: 10px 15px;
-    background-color: #eee;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    display: flex; /* Use flex for better alignment */
+    align-items: center; /* Vertically center input and label */
+    padding: 12px 15px; /* Adjusted padding */
+    background-color: #f8f9fa; /* Slightly different background */
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .option:hover {
-    background-color: #e0e0e0;
+    background-color: #e9ecef;
+    border-color: #adb5bd;
 }
 
+/* Make sure input doesn't prevent click on label/div */
 .option input[type="radio"],
 .option input[type="checkbox"] {
-    margin-right: 10px;
-    vertical-align: middle; /* Align checkbox/radio with text */
+    margin-right: 12px; /* More space between input and text */
+    flex-shrink: 0; /* Prevent shrinking */
+    width: 1.3em; /* Make checkbox/radio slightly larger */
+    height: 1.3em;
+    cursor: pointer; /* Cursor on the input itself */
 }
 
 .option label {
-     vertical-align: middle; /* Align label text */
-     cursor: pointer; /* Indicate label is clickable */
+    flex-grow: 1; /* Label takes remaining space */
+    cursor: pointer; /* Indicate label is clickable */
+    margin: 0; /* Remove default margins if any */
+    line-height: 1.4; /* Adjust line height within option if needed */
 }
 
-/* Стили для обратной связи */
+/* --- Feedback Styles --- */
 .feedback {
-    margin-top: 15px;
-    padding: 10px;
-    border-radius: 5px;
-    font-weight: bold;
-    min-height: 1.5em; /* Reserve space */
+    margin-top: 20px; /* More space above feedback */
+    padding: 12px 15px;
+    border-radius: 6px;
+    font-weight: 500; /* Slightly bolder */
+    min-height: 1.5em;
+    line-height: 1.5;
+    display: none; /* Hide by default, show via JS */
 }
 
 .feedback.correct {
-    color: #155724;
-    background-color: #d4edda;
-    border: 1px solid #c3e6cb;
+    display: block;
+    color: #0f5132;
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
 }
 
 .feedback.incorrect {
-    color: #721c24;
+    display: block;
+    color: #842029;
     background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
+    border: 1px solid #f5c2c7;
 }
 
-/* Стили для подсветки ответов */
+/* --- Answer Highlighting Styles --- */
 .option.correct-answer {
-    background-color: #c3e6cb; /* Light green for correct */
-    border-color: #155724;
+    background-color: #d1e7dd; /* Match feedback */
+    border-color: #0f5132;
+    color: #0f5132; /* Change text color for contrast */
 }
 .option.incorrect-answer {
-    background-color: #f5c6cb; /* Light red for incorrect selected */
-    border-color: #721c24;
+    background-color: #f8d7da; /* Match feedback */
+    border-color: #842029;
+    color: #842029; /* Change text color for contrast */
 }
-.option.selected {
-     /* You might want a specific style for selected before checking */
-     background-color: #d1e7fd;
+/* Style for the selected answer *before* checking (optional but good) */
+.option.selected:not(.correct-answer):not(.incorrect-answer) {
+     background-color: #cfe2ff;
+     border-color: #9ec5fe;
+}
+/* Ensure highlighted answers override hover */
+.option.correct-answer:hover,
+.option.incorrect-answer:hover {
+    /* Keep highlighted colors */
+    background-color: #d1e7dd;
+    border-color: #0f5132;
+}
+.option.incorrect-answer:hover {
+     background-color: #f8d7da;
+     border-color: #842029;
 }
 
 
+/* --- Buttons --- */
 .btn {
     display: block;
     width: 100%;
-    padding: 12px;
-    margin-top: 20px;
-    background-color: #28a745;
+    padding: 14px 20px; /* Consistent, larger padding */
+    margin-top: 25px;
+    background-color: #198754; /* Slightly different green */
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 1em;
-    transition: background-color 0.3s ease;
+    font-size: 1.1em; /* Larger font size */
+    font-weight: 500;
+    text-align: center;
+    transition: background-color 0.3s ease, transform 0.1s ease;
 }
 
 .btn:hover {
-    background-color: #218838;
+    background-color: #157347;
+}
+
+.btn:active { /* Feedback on tap */
+    transform: scale(0.99);
 }
 
 .btn:disabled {
-    background-color: #ccc;
+    background-color: #adb5bd; /* Grey out disabled button */
     cursor: not-allowed;
+    transform: none; /* Disable active transform */
 }
 
+/* Specific button styles if needed */
+#submit-button {
+     background-color: #0d6efd; /* Blue for submit/retry */
+}
+#submit-button:hover {
+    background-color: #0b5ed7;
+}
+#submit-button:disabled {
+     background-color: #adb5bd;
+}
+
+#next-button {
+    background-color: #6c757d; /* Grey for skip initially */
+}
+#next-button:hover {
+     background-color: #5c636a;
+}
+/* When next button means 'Next' or 'Results' (after correct answer) */
+#next-button.proceed {
+    background-color: #198754; /* Green */
+}
+#next-button.proceed:hover {
+     background-color: #157347;
+}
+
+
+/* --- Results --- */
 #results-container {
     text-align: center;
     margin-top: 30px;
+    padding: 20px;
+}
+#results-container h2 {
+    margin-bottom: 20px;
+}
+#results-container p {
+    font-size: 1.1em;
+    margin-bottom: 30px;
+}
+#results-container .btn { /* Style the "Choose another theme" button */
+    width: auto; /* Don't force full width */
+    display: inline-block;
+    padding: 12px 25px;
+    background-color: #007bff;
+}
+#results-container .btn:hover {
+     background-color: #0056b3;
+}
+
+
+/* --- Media Queries for Responsiveness --- */
+
+/* Tablet */
+@media (min-width: 600px) {
+    body {
+        padding: 20px; /* More padding on larger screens */
+    }
+    .container {
+        padding: 30px;
+        margin: 30px auto;
+    }
+    h1 { font-size: 2em; }
+    h2 { font-size: 1.4em; }
+    .option { padding: 14px 18px; }
+    .feedback { padding: 14px 18px; }
+    .btn { padding: 15px 25px; font-size: 1.15em; }
+    .back-link { top: 20px; left: 25px; }
+    .quiz-container { padding-top: 55px; }
+
+}
+
+/* Desktop */
+@media (min-width: 900px) {
+    h1 { font-size: 2.2em; }
+    h2 { font-size: 1.5em; }
+    .container {
+        /* Max-width is already set */
+    }
 }

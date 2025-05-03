@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Элементы DOM
+    // --- DOM Elements ---
     const quizTitle = document.getElementById('quiz-title');
     const questionContainer = document.getElementById('question-container');
     const questionText = document.getElementById('question-text');
@@ -12,80 +12,103 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalScoreSpan = document.getElementById('total-score');
     const currentQuestionSpan = document.getElementById('current-question');
     const totalQuestionsSpan = document.getElementById('total-questions');
+    const backLink = document.querySelector('.back-link'); // Get back link
 
-    // Переменные состояния квиза
+    // --- Quiz State ---
     let currentQuestions = [];
     let currentQuestionIndex = 0;
     let score = 0;
-    // let selectedAnswers = []; // Не нужна глобально, будем получать в checkAnswer
-    let isQuestionFinalized = false; // Флаг: true, если ответ верный или вопрос пропущен
+    let isQuestionFinalized = false; // True if answer is correct or skipped
 
-    // --- Получение темы из URL ---
+    // --- Accessibility ---
+    if (feedbackDiv) {
+        feedbackDiv.setAttribute('aria-live', 'polite'); // Announce feedback changes
+    }
+
+    // --- Get Theme from URL ---
     const urlParams = new URLSearchParams(window.location.search);
     const theme = urlParams.get('theme');
 
     if (!theme) {
-        questionText.textContent = 'Ошибка: Тема квиза не выбрана.';
-        if (submitButton) submitButton.style.display = 'none';
-        if (nextButton) nextButton.style.display = 'none';
-        if (resultsContainer) resultsContainer.style.display = 'none';
-        if (questionContainer) questionContainer.style.display = 'none';
-        // Показываем ссылку назад даже при ошибке
-        const backLink = document.querySelector('.back-link');
-        if (backLink) backLink.style.display = 'block';
+        handleFatalError('Ошибка: Тема квиза не выбрана.');
         return;
     }
 
-    // Устанавливаем заголовок квиза
-    quizTitle.textContent = `Квиз: Тема ${theme.replace('theme', '')}`;
+    // Set quiz title
+    const themeNumber = theme.replace('theme', ''); // Extract number for title
+    quizTitle.textContent = `Квиз: Тема ${themeNumber}`; // Use extracted number
 
-    // --- Загрузка вопросов ---
+    // --- Load Questions ---
     fetch(`data/${theme}.json`)
         .then(response => {
             if (!response.ok) {
-                throw new Error(`Не удалось загрузить файл data/${theme}.json. Статус: ${response.status}`);
+                throw new Error(`Не удалось загрузить файл data/${theme}.json (Статус: ${response.status})`);
             }
             return response.json();
         })
         .then(data => {
             if (!Array.isArray(data) || data.length === 0) {
-                 throw new Error(`Файл data/${theme}.json пуст или имеет неверный формат.`);
+                throw new Error(`Файл data/${theme}.json пуст или имеет неверный формат.`);
             }
             currentQuestions = data;
             totalQuestionsSpan.textContent = currentQuestions.length;
-            totalScoreSpan.textContent = currentQuestions.length;
+            totalScoreSpan.textContent = currentQuestions.length; // Set total for results page early
+            if (questionContainer) questionContainer.style.display = 'block'; // Ensure visible
             displayQuestion();
         })
         .catch(error => {
             console.error('Ошибка при загрузке или обработке вопросов:', error);
-            questionText.textContent = `Не удалось загрузить вопросы для темы "${theme}".`;
-            if (questionContainer) questionContainer.style.display = 'none';
-             if (submitButton) submitButton.style.display = 'none';
-             if (nextButton) nextButton.style.display = 'none';
-             feedbackDiv.textContent = `Ошибка: ${error.message}`;
-             feedbackDiv.className = 'feedback incorrect';
-             feedbackDiv.style.display = 'block'; // Убедимся, что сообщение об ошибке видно
+            handleFatalError(`Не удалось загрузить вопросы для темы "${themeNumber}". ${error.message}`);
         });
 
-    // --- Отображение вопроса ---
-    function displayQuestion() {
-        isQuestionFinalized = false; // Сброс флага финализации
-        feedbackDiv.textContent = '';
-        feedbackDiv.className = 'feedback';
-        submitButton.disabled = true; // Блокируем до выбора
-        submitButton.textContent = 'Проверить ответ'; // Сброс текста кнопки
-        submitButton.style.display = 'block';
-        nextButton.style.display = 'none'; // Скрываем кнопку "Следующий/Пропустить"
+    // --- Fatal Error Handler ---
+    function handleFatalError(message) {
+        if (quizTitle) quizTitle.textContent = 'Ошибка Квиза';
+        if (questionText) questionText.textContent = message;
+        if (questionContainer) questionContainer.style.display = 'block'; // Show container for message
+        if (optionsContainer) optionsContainer.innerHTML = ''; // Clear options
+        if (submitButton) submitButton.style.display = 'none';
+        if (nextButton) nextButton.style.display = 'none';
+        if (resultsContainer) resultsContainer.style.display = 'none';
+        if (feedbackDiv) { // Show error in feedback area
+            feedbackDiv.textContent = `Ошибка: ${message}`;
+            feedbackDiv.className = 'feedback incorrect'; // Use error styling
+            feedbackDiv.style.display = 'block';
+        }
+         // Always show back link
+        if (backLink) backLink.style.display = 'block';
+    }
 
+
+    // --- Display Question ---
+    function displayQuestion() {
         if (currentQuestionIndex >= currentQuestions.length) {
             showResults();
             return;
         }
 
+        isQuestionFinalized = false; // Reset finalization flag
+        feedbackDiv.textContent = '';
+        feedbackDiv.className = 'feedback'; // Reset feedback style
+        feedbackDiv.style.display = 'none'; // Hide feedback initially
+        submitButton.disabled = true; // Disable until an option is selected
+        submitButton.textContent = 'Проверить ответ';
+        submitButton.style.display = 'block';
+        nextButton.style.display = 'none'; // Hide next/skip button initially
+        nextButton.classList.remove('proceed'); // Remove green style if present
+
         const questionData = currentQuestions[currentQuestionIndex];
         currentQuestionSpan.textContent = currentQuestionIndex + 1;
         questionText.textContent = questionData.question;
-        optionsContainer.innerHTML = ''; // Очистка
+        optionsContainer.innerHTML = ''; // Clear previous options
+
+        // Clear previous highlights (needed if navigating back/forth was implemented)
+        optionsContainer.querySelectorAll('.option').forEach(opt => {
+             opt.classList.remove('correct-answer', 'incorrect-answer', 'selected');
+             const input = opt.querySelector('input');
+             if (input) input.disabled = false; // Re-enable inputs
+         });
+
 
         const inputType = questionData.type === 'multiple' ? 'checkbox' : 'radio';
 
@@ -95,10 +118,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const input = document.createElement('input');
             input.type = inputType;
-            input.name = 'option';
+            input.name = 'option'; // Use same name for radio buttons
             input.value = index;
             input.id = `option-${index}`;
-            input.dataset.index = index; // Сохраняем индекс
+            input.dataset.index = index;
 
             const label = document.createElement('label');
             label.htmlFor = `option-${index}`;
@@ -108,142 +131,175 @@ document.addEventListener('DOMContentLoaded', () => {
             optionElement.appendChild(label);
             optionsContainer.appendChild(optionElement);
 
-            // Обработчик клика на весь блок опции
+            // Event listener on the entire option element for better usability
             optionElement.addEventListener('click', (event) => {
-                if (isQuestionFinalized) return; // Нельзя менять выбор после финализации
+                if (isQuestionFinalized) return; // Don't allow changes after finalizing
 
-                if (event.target !== input) {
-                    input.checked = (inputType === 'checkbox') ? !input.checked : true;
-                     // Для radio нужно снять checked с других при клике на label
-                     if (inputType === 'radio') {
-                        optionsContainer.querySelectorAll('input[type="radio"]').forEach(radio => {
-                            if (radio !== input) radio.checked = false;
-                        });
-                     }
+                 // Prevent double-triggering if label/input is clicked directly
+                if (event.target === optionElement || event.target === label) {
+                    if (inputType === 'radio') {
+                        input.checked = true;
+                         // Manually trigger change event for radio to update button state
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    } else {
+                        input.checked = !input.checked;
+                        // Manually trigger change event for checkbox
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
                 }
-                 // Нужно вызвать handleOptionSelection после имитации клика
-                 handleOptionSelection();
+                 // Don't call handleOptionSelection here, rely on 'change' event
             });
 
-            // Обработчик на сам input
-             input.addEventListener('change', () => {
-                 if (isQuestionFinalized) return;
-                 handleOptionSelection();
-             });
+            // Handle state change on the input itself
+            input.addEventListener('change', () => {
+                if (isQuestionFinalized) return;
+                handleOptionSelection();
+            });
         });
-         // Первичная проверка состояния кнопки после рендера
-         handleOptionSelection();
+
+        // Ensure initial button state is correct
+        handleOptionSelection();
+
+        // Scroll question into view
+        if (questionContainer) {
+            questionContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
-     // --- Обработка выбора опции ---
-     function handleOptionSelection() {
-         // Не позволяем активировать кнопку, если вопрос финализирован
-         if (isQuestionFinalized) {
-             submitButton.disabled = true;
-             return;
-         }
-         const checkedInputs = optionsContainer.querySelectorAll('input:checked');
-         submitButton.disabled = checkedInputs.length === 0;
-     }
+    // --- Handle Option Selection ---
+    function handleOptionSelection() {
+        if (isQuestionFinalized) {
+            submitButton.disabled = true;
+            return;
+        }
+        const checkedInputs = optionsContainer.querySelectorAll('input:checked');
+
+        // Clear previous 'selected' markers if user changes mind before submitting
+        optionsContainer.querySelectorAll('.option.selected').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        // Mark currently checked options
+        checkedInputs.forEach(input => {
+             input.closest('.option')?.classList.add('selected');
+        });
 
 
-    // --- Проверка ответа ---
+        submitButton.disabled = checkedInputs.length === 0;
+    }
+
+    // --- Check Answer ---
     function checkAnswer() {
-        // Очищаем предыдущие стили и фидбек перед новой проверкой (важно для ретрая)
+        // Clear previous feedback and styles before new check
         feedbackDiv.textContent = '';
         feedbackDiv.className = 'feedback';
+        feedbackDiv.style.display = 'none'; // Hide feedback area initially
         optionsContainer.querySelectorAll('.option').forEach(opt => {
-            opt.classList.remove('correct-answer', 'incorrect-answer', 'selected');
+            opt.classList.remove('correct-answer', 'incorrect-answer');
+            // Keep the 'selected' class for now to see what was chosen
         });
 
         const questionData = currentQuestions[currentQuestionIndex];
-        const correctAnswers = questionData.correctAnswers.map(String); // Строки для сравнения
+        const correctAnswers = questionData.correctAnswers.map(String); // Ensure string comparison
 
-        const selectedAnswers = [];
-        const inputs = optionsContainer.querySelectorAll('input');
-        let isCorrect = false;
+        const selectedInputs = optionsContainer.querySelectorAll('input:checked');
+        const selectedAnswers = Array.from(selectedInputs).map(input => input.value);
 
-        inputs.forEach((input) => {
-             const optionDiv = input.closest('.option');
-             const isSelected = input.checked;
-             const isCorrectAnswer = correctAnswers.includes(input.value);
-
-             if (isSelected) {
-                 selectedAnswers.push(input.value);
-                 optionDiv.classList.add('selected'); // Помечаем выбранные в ЭТОЙ попытке
-             }
-
-             // Подсветка правильных/неправильных (показываем всегда после проверки)
-             if (isCorrectAnswer) {
-                 optionDiv.classList.add('correct-answer');
-             } else if (isSelected && !isCorrectAnswer) {
-                 optionDiv.classList.add('incorrect-answer');
-             }
-             // Пока не блокируем инпуты здесь
-         });
-
-        // Сравнение массивов
+        // Sort for comparison (important for multiple choice)
         const sortedSelected = [...selectedAnswers].sort();
         const sortedCorrect = [...correctAnswers].sort();
-        isCorrect = JSON.stringify(sortedSelected) === JSON.stringify(sortedCorrect);
+        const isCorrect = JSON.stringify(sortedSelected) === JSON.stringify(sortedCorrect);
 
-        // Показываем обратную связь и управляем кнопками
+        // Disable inputs only AFTER checking
+        const allInputs = optionsContainer.querySelectorAll('input');
+
+
+        // Provide feedback and highlighting
+        feedbackDiv.style.display = 'block'; // Show feedback area
+        optionsContainer.querySelectorAll('.option').forEach(opt => {
+            const input = opt.querySelector('input');
+            if (!input) return;
+            const isCorrectAnswer = correctAnswers.includes(input.value);
+            const isSelected = input.checked;
+
+            if (isCorrectAnswer) {
+                opt.classList.add('correct-answer');
+            } else if (isSelected && !isCorrectAnswer) {
+                opt.classList.add('incorrect-answer');
+            }
+        });
+
+
         if (isCorrect) {
-            isQuestionFinalized = true; // Финализируем вопрос
+            isQuestionFinalized = true; // Finalize on correct answer
             feedbackDiv.textContent = 'Правильно!';
             feedbackDiv.className = 'feedback correct';
-            score++; // Увеличиваем счет
+            score++; // Increment score
 
-            // Блокируем инпуты после правильного ответа
-            inputs.forEach(input => input.disabled = true);
+            allInputs.forEach(input => input.disabled = true); // Disable all inputs
+            optionsContainer.querySelectorAll('.option').forEach(opt => opt.style.cursor = 'default'); // Change cursor
 
-            submitButton.style.display = 'none'; // Скрываем "Проверить"
-            submitButton.disabled = true; // На всякий случай
 
-            // Настраиваем кнопку "Следующий"
+            submitButton.style.display = 'none'; // Hide submit button
+            submitButton.disabled = true;
+
+            // Configure and show Next button
             if (currentQuestionIndex < currentQuestions.length - 1) {
                 nextButton.textContent = 'Следующий вопрос';
             } else {
                 nextButton.textContent = 'Показать результаты';
             }
-            nextButton.style.display = 'block'; // Показываем кнопку "Следующий"
-
+            nextButton.classList.add('proceed'); // Style as green
+            nextButton.style.display = 'block';
+            nextButton.disabled = false; // Ensure enabled
         } else {
-            isQuestionFinalized = false; // НЕ финализируем, даем шанс
-            feedbackDiv.textContent = `Неправильно. Попробуйте еще раз или пропустите. Правильные ответы отмечены зеленым.`;
+            isQuestionFinalized = false; // Allow retry
+            feedbackDiv.textContent = 'Неправильно. Попробуйте еще раз или пропустите.';
             feedbackDiv.className = 'feedback incorrect';
 
-            // Инпуты НЕ блокируем, позволяем изменить выбор
+             // Don't disable inputs, allow user to change selection
+             allInputs.forEach(input => input.disabled = false);
+             optionsContainer.querySelectorAll('.option').forEach(opt => opt.style.cursor = 'pointer'); // Keep pointer
 
             submitButton.textContent = 'Попробовать снова';
-            submitButton.disabled = false; // Разрешаем нажать "Попробовать снова"
-            submitButton.style.display = 'block'; // Убедимся, что она видна
+            submitButton.disabled = false; // Ensure retry button is enabled
+            submitButton.style.display = 'block';
 
+            // Configure and show Skip button
             nextButton.textContent = 'Пропустить вопрос';
-            nextButton.style.display = 'block'; // Показываем кнопку "Пропустить"
+            nextButton.classList.remove('proceed'); // Style as grey/default
+            nextButton.style.display = 'block';
+            nextButton.disabled = false; // Ensure enabled
+        }
+         // Scroll to feedback smoothly
+         feedbackDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // --- Next/Skip Question ---
+    function nextQuestion() {
+        // Whether skipping or moving after correct answer, the question is done.
+        isQuestionFinalized = true; // Mark as finalized before moving on
+        currentQuestionIndex++;
+        displayQuestion(); // Display next or results
+    }
+
+    // --- Show Results ---
+    function showResults() {
+        if (questionContainer) questionContainer.style.display = 'none';
+        if (submitButton) submitButton.style.display = 'none';
+        if (nextButton) nextButton.style.display = 'none';
+        if (feedbackDiv) feedbackDiv.style.display = 'none';
+        if (backLink) backLink.style.display = 'none'; // Hide back link on results
+
+        scoreSpan.textContent = score;
+        // totalScoreSpan is already set during load
+        if (resultsContainer) {
+            resultsContainer.style.display = 'block';
+            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
 
-    // --- Переход к следующему вопросу (или пропуск) ---
-    function nextQuestion() {
-        // В любом случае (пропуск или переход дальше), вопрос считается завершенным
-        isQuestionFinalized = true; // Помечаем как финальный перед переходом
-        currentQuestionIndex++;
-        displayQuestion(); // Отображаем следующий вопрос или результаты
-    }
+    // --- Event Listeners ---
+    if (submitButton) submitButton.addEventListener('click', checkAnswer);
+    if (nextButton) nextButton.addEventListener('click', nextQuestion); // Handles both Skip and Next
 
-    // --- Показ результатов ---
-    function showResults() {
-        questionContainer.style.display = 'none';
-        submitButton.style.display = 'none';
-        nextButton.style.display = 'none';
-        feedbackDiv.style.display = 'none';
-
-        scoreSpan.textContent = score;
-        resultsContainer.style.display = 'block';
-    }
-
-    // --- Назначение обработчиков событий ---
-    submitButton.addEventListener('click', checkAnswer);
-    nextButton.addEventListener('click', nextQuestion); // Эта кнопка теперь и пропускает, и переходит дальше
 });
